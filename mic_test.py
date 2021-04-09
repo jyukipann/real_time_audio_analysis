@@ -76,13 +76,20 @@ def get_buff():
 		data = np.concatenate(queue)
 		#print(len(data))
 
+def command():
+	while True:
+		cmd = input()
+		if cmd == "exit":
+			exit(0)
+
 if __name__ == "__main__":
-	#thread_1 = threading.Thread(target=get_buff)
+	thread_1 = threading.Thread(target=get_buff)
 	thread_2 = threading.Thread(target=plot_audio)
 	thread_2.setDaemon(True)
-	#thread_1.start()
+	thread_1.setDaemon(True)
+	thread_1.start()
 	thread_2.start()
-	get_buff()
+	command()
 """
 
 
