@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 from collections import deque
 import asyncio
 import threading
+import warnings
+
+warnings.resetwarnings()
+warnings.simplefilter('ignore')
 
 """
 x = np.linspace(0, 1, 100)
@@ -57,47 +61,65 @@ queue = deque([np.zeros(CHUNK)]*length, maxlen=length)
 x = np.array(range(g_len))
 data = np.zeros(g_len)
 
+fft_queue = deque([np.zeros(CHUNK)]*length,maxlen=length*21)#0.5/((1/44100)*1024) = 21.5....
+
 def plot_audio():
-	global x, data
-	while True:
+	global x, data, alive
+	while alive:
 		#print(str(x.shape)+str(data.shape))
+		plt.ylim(-32768, 32767)
 		plt.plot(x,data,label="audio")
-		plt.pause(0.1)
-		plt.cla()
+		plt.pause(0.02)
+		plt.clf()
+	print("plot end")
+	plt.clf()
+	plt.close("all")
 
 def get_buff():
-	global CHUNK, data
-	while stream_in.is_active() and stream_out.is_active():
+	global CHUNK, data, alive, queue
+	while stream_in.is_active() and stream_out.is_active() and alive:
 		input_buff = stream_in.read(CHUNK)
 		output_buff = signal_proc(input_buff)
-		stream_out.write(output_buff)
+		#stream_out.write(output_buff)
 		#print(type(output_buff))
-		queue.append(np.frombuffer(output_buff,dtype="int16"))#ほんとは結合したい。1024*10長さのnparrayがほしい。
+		queue.append(np.frombuffer(output_buff,dtype="int16"))
 		data = np.concatenate(queue)
 		#print(len(data))
+	print("get Buff end")
+	stream_in.stop_stream()
+	stream_in.close()
+	stream_out.stop_stream()
+	stream_out.close()
+	p.terminate()
+
+def spectrogram():
+	global CHUNK, data, alive, queue
+	while alive:
+		
 
 def command():
-	while True:
-		cmd = input()
+	global alive
+	alive = True
+	ESC = 0x1B
+	while alive:
+		cmd = input("command > ")
 		if cmd == "exit":
-			exit(0)
+			alive = False
+
 
 if __name__ == "__main__":
+	alive = True
 	thread_1 = threading.Thread(target=get_buff)
 	thread_2 = threading.Thread(target=plot_audio)
-	thread_2.setDaemon(True)
 	thread_1.setDaemon(True)
+	thread_2.setDaemon(True)
 	thread_1.start()
 	thread_2.start()
 	command()
+	thread_1.join()
+	thread_2.join()
+
 """
-
-
-
-
-
-
-
 stream_in.stop_stream()
 stream_in.close()
 stream_out.stop_stream()
