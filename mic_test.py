@@ -1,6 +1,7 @@
 import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import deque
 
 """
 x = np.linspace(0, 1, 100)
@@ -11,7 +12,7 @@ plt.plot(x, y)
 RATE = 44100
 CHUNK = 1024
 CHANNEL_IN = 1
-CHANNEL_OUT = 2
+CHANNEL_OUT = 1
 
 def signal_proc(input_buff, dtype=np.int16):
 	# Convert framebuffer into nd-array
@@ -39,7 +40,7 @@ stream_in = p.open(
 		output = False,
 	)
 
-stream_out = p.open(    
+stream_out = p.open(
 		format=pyaudio.paInt16,
 		channels=CHANNEL_OUT,
 		rate=RATE,
@@ -48,12 +49,15 @@ stream_out = p.open(
 		output=True,
 	)
 
+queue = deque([], maxlen=10)
+
 while stream_in.is_active() and stream_out.is_active():
 	input_buff = stream_in.read(CHUNK)
 	output_buff = signal_proc(input_buff)
 	stream_out.write(output_buff)
-	print(output_buff)
-	
+	#print(type(output_buff))
+	queue.append(np.frombuffer(output_buff,dtype="int16"))#ほんとは結合したい。1024*10長さのnparrayがほしい。
+
 stream_in.stop_stream()
 stream_in.close()
 stream_out.stop_stream()
