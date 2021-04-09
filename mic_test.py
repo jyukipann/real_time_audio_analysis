@@ -2,6 +2,8 @@ import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import deque
+import asyncio
+import threading
 
 """
 x = np.linspace(0, 1, 100)
@@ -49,17 +51,49 @@ stream_out = p.open(
 		output=True,
 	)
 
-queue = deque([], maxlen=10)
+length = 100
+g_len = length*CHUNK
+queue = deque([np.zeros(CHUNK)]*length, maxlen=length)
+x = np.array(range(g_len))
+data = np.zeros(g_len)
 
-while stream_in.is_active() and stream_out.is_active():
-	input_buff = stream_in.read(CHUNK)
-	output_buff = signal_proc(input_buff)
-	stream_out.write(output_buff)
-	#print(type(output_buff))
-	queue.append(np.frombuffer(output_buff,dtype="int16"))#ほんとは結合したい。1024*10長さのnparrayがほしい。
+def plot_audio():
+	global x, data
+	while True:
+		#print(str(x.shape)+str(data.shape))
+		plt.plot(x,data,label="audio")
+		plt.pause(0.1)
+		plt.cla()
+
+def get_buff():
+	global CHUNK, data
+	while stream_in.is_active() and stream_out.is_active():
+		input_buff = stream_in.read(CHUNK)
+		output_buff = signal_proc(input_buff)
+		stream_out.write(output_buff)
+		#print(type(output_buff))
+		queue.append(np.frombuffer(output_buff,dtype="int16"))#ほんとは結合したい。1024*10長さのnparrayがほしい。
+		data = np.concatenate(queue)
+		#print(len(data))
+
+if __name__ == "__main__":
+	#thread_1 = threading.Thread(target=get_buff)
+	thread_2 = threading.Thread(target=plot_audio)
+	thread_2.setDaemon(True)
+	#thread_1.start()
+	thread_2.start()
+	get_buff()
+"""
+
+
+
+
+
+
 
 stream_in.stop_stream()
 stream_in.close()
 stream_out.stop_stream()
 stream_out.close()
 p.terminate()
+"""
