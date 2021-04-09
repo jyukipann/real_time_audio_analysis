@@ -1,5 +1,12 @@
 import pyaudio
 import numpy as np
+import matplotlib.pyplot as plt
+
+"""
+x = np.linspace(0, 1, 100)
+y = x ** 2
+plt.plot(x, y)
+"""
 
 RATE = 44100
 CHUNK = 1024
@@ -8,7 +15,7 @@ CHANNEL_OUT = 2
 
 def signal_proc(input_buff, dtype=np.int16):
 	# Convert framebuffer into nd-array
-	input_data = np.fromstring(input_buff, dtype=dtype)
+	input_data = np.frombuffer(input_buff, dtype=dtype)
 	
 	# Signal processing
 	# Set output as L-ch
@@ -17,7 +24,7 @@ def signal_proc(input_buff, dtype=np.int16):
 
 	# Convert nd-array into framebuffer
 	output_data = np.reshape(output_data.T, (CHUNK * CHANNEL_OUT))
-	output_buff = output_data.astype(dtype).tostring()
+	output_buff = output_data.astype(dtype).tobytes()
 	return output_buff
 
 
@@ -45,6 +52,7 @@ while stream_in.is_active() and stream_out.is_active():
 	input_buff = stream_in.read(CHUNK)
 	output_buff = signal_proc(input_buff)
 	stream_out.write(output_buff)
+	print(output_buff)
 	
 stream_in.stop_stream()
 stream_in.close()
