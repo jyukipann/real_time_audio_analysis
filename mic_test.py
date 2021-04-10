@@ -122,7 +122,7 @@ class PlotGraph:
 
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.update)
-		self.timer.start(20)
+		self.timer.start(40)
 
 		self.data = np.zeros(g_len)
 
