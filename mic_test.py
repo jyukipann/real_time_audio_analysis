@@ -5,6 +5,9 @@ from collections import deque
 import asyncio
 import threading
 import warnings
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtCore, QtGui
+import sys
 
 warnings.resetwarnings()
 warnings.simplefilter('ignore')
@@ -95,7 +98,7 @@ def get_buff():
 def spectrogram():
 	global CHUNK, data, alive, queue
 	while alive:
-		
+		pass
 
 def command():
 	global alive
@@ -106,18 +109,51 @@ def command():
 		if cmd == "exit":
 			alive = False
 
+class PlotGraph:
+	def __init__(self):
+		print("graph")
+		global g_len
+
+		self.win = pg.GraphicsWindow()
+		self.win.setWindowTitle('plot')
+		self.plt = self.win.addPlot()
+		self.plt.setYRange(-32768, 32767)
+		self.curve = self.plt.plot(pen=(0, 0, 255))
+
+		self.timer = QtCore.QTimer()
+		self.timer.timeout.connect(self.update)
+		self.timer.start(20)
+
+		self.data = np.zeros(g_len)
+
+	def update(self):
+		global data
+		self.data = data
+		self.curve.setData(self.data)
+
+def plot_audio_qt():
+	global x, data, alive
+	graphWin = PlotGraph()
+	if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
+		QtGui.QApplication.instance().exec_()
+	#graphWin.close()
+
 
 if __name__ == "__main__":
 	alive = True
 	thread_1 = threading.Thread(target=get_buff)
-	thread_2 = threading.Thread(target=plot_audio)
+	#thread_2 = threading.Thread(target=plot_audio)
+	thread_3 = threading.Thread(target=plot_audio_qt)
 	thread_1.setDaemon(True)
-	thread_2.setDaemon(True)
+	#thread_2.setDaemon(True)
+	thread_3.setDaemon(True)
 	thread_1.start()
-	thread_2.start()
+	#thread_2.start()
+	thread_3.start()
 	command()
 	thread_1.join()
-	thread_2.join()
+	#thread_2.join()
+	thread_3.join()
 
 """
 stream_in.stop_stream()
