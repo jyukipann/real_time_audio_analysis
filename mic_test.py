@@ -62,9 +62,11 @@ length = 100
 g_len = length*CHUNK
 queue = deque([np.zeros(CHUNK)]*length, maxlen=length)
 x = np.array(range(g_len))
+x_fft = np.array(range(20,20000))
 data = np.zeros(g_len)
-
-fft_queue = deque([np.zeros(CHUNK)]*length,maxlen=length*21)#0.5/((1/44100)*1024) = 21.5....
+fft_span_sec = 0.5
+fft_d = int(fft_span_sec/((1/RATE)*CHUNK))
+fft_queue = deque([np.zeros(CHUNK)]*length,maxlen=length*fft_d)#0.5/((1/44100)*1024) = 21.5....
 
 def plot_audio():
 	global x, data, alive
@@ -86,6 +88,7 @@ def get_buff():
 		#stream_out.write(output_buff)
 		#print(type(output_buff))
 		queue.append(np.frombuffer(output_buff,dtype="int16"))
+		fft_queue.append(np.frombuffer(output_buff,dtype="int16"))
 		data = np.concatenate(queue)
 		#print(len(data))
 	print("get Buff end")
@@ -112,24 +115,28 @@ def command():
 class PlotGraph:
 	def __init__(self):
 		print("graph")
-		global g_len
+		global g_len,length,fft_d,CHUNK
 
 		self.win = pg.GraphicsWindow()
 		self.win.setWindowTitle('plot')
 		self.plt = self.win.addPlot()
-		self.plt.setYRange(-32768, 32767)
+		#self.plt.setYRange(-32768, 32767)
 		self.curve = self.plt.plot(pen=(0, 0, 255))
 
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.update)
-		self.timer.start(40)
+		
+		#self.timer.start(40)
+		self.timer.start(500)
 
-		self.data = np.zeros(g_len)
+		#self.data = np.zeros(g_len)
+		self.data = np.zeros(length*fft_d*CHUNK)
 
 	def update(self):
-		global data
-		self.data = data
-		self.curve.setData(self.data)
+		global data, fft_queue
+		#self.data = data
+		self.data,freqList = fft(fft_queue)
+		self.curve.setData(freqList,self.data)
 
 def plot_audio_qt():
 	global x, data, alive
@@ -138,6 +145,12 @@ def plot_audio_qt():
 		QtGui.QApplication.instance().exec_()
 	#graphWin.close()
 
+def fft(fft_queue):
+	global RATE
+	fft_data = np.concatenate(fft_queue)
+	fft_data = np.abs(np.fft.fft(data))
+	freqList = np.fft.fftfreq(fft_data.shape[0], d=1/RATE)
+	return fft_data,freqList
 
 if __name__ == "__main__":
 	alive = True
