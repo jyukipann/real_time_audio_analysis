@@ -112,6 +112,12 @@ def command():
 		if cmd == "exit":
 			alive = False
 
+def x_label():
+	x = [(0,0),(110,110)]
+	while x[-1][0] < 4300:
+		x.append((x[-1][0]*2,x[-1][0]*2))
+	return x
+
 class PlotGraph:
 	def __init__(self):
 		print("graph")
@@ -120,8 +126,11 @@ class PlotGraph:
 		self.win = pg.GraphicsWindow()
 		self.win.setWindowTitle('plot')
 		self.plt = self.win.addPlot()
-		#self.plt.setYRange(-32768, 32767)
+		self.plt.setYRange(0, 15)
+		self.plt.setXRange(0, 4300)
 		self.curve = self.plt.plot(pen=(0, 0, 255))
+		self.plt.getAxis('bottom').setTicks([x_label(),[]])
+		#self.plt.getAxis('bottom').setTicks([[0,1,2,3,4,5,6],[]])
 
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.update)
@@ -148,7 +157,7 @@ def plot_audio_qt():
 def fft(fft_queue):
 	global RATE
 	fft_data = np.concatenate(fft_queue)
-	fft_data = np.abs(np.fft.fft(data))
+	fft_data = np.abs(np.fft.fft(data))/fft_data.shape[0]*2
 	freqList = np.fft.fftfreq(fft_data.shape[0], d=1/RATE)
 	return fft_data,freqList
 
